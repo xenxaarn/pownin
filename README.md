@@ -2,8 +2,8 @@
 
 <img src="preview.png" alt="Interface preview" width="600">
 
-A locally hosted AI VTuber that puts a sassy, sardine-powered ninja penguin on your desktop.  
-It listens to your voice or typed messages, processes them through a local language model,  
+A locally hosted ninja penguin on your desktop.  
+That listens to your voice or typed messages, processes them through a local language model,  
 and responds with voice and lip-synced animations — all on your own machine.
 
  - the project only runs on firefox,chrome (no other browser for now)

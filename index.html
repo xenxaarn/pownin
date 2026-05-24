@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pownin</title>
+    <style>
+        :root {
+            --font: 'Inter', system-ui, -apple-system, sans-serif;
+            --blur: saturate(180%) blur(12px);
+            --bg-start: #0d111f;
+            --bg-end: #020617;
+            --text-color: #e4e8f1;
+            --bubble-user-bg: rgba(80, 120, 255, 0.22);
+            --bubble-ai-bg: rgba(255, 255, 255, 0.07);
+            --bubble-user-text: #c5d0ff;
+            --bubble-ai-text: #e4e8f1;
+            --bubble-user-border: rgba(100, 140, 255, 0.2);
+            --bubble-ai-border: rgba(255, 255, 255, 0.08);
+            --input-bar-bg: rgba(10, 15, 24, 0.6);
+            --input-bar-border: rgba(255, 255, 255, 0.1);
+            --input-bar-text: #fff;
+            --input-placeholder: rgba(255,255,255,0.3);
+            --btn-bg: rgba(255,255,255,0.08);
+            --btn-border: rgba(255,255,255,0.1);
+            --btn-color: #bcc4d4;
+            --btn-hover-bg: rgba(109,138,255,0.2);
+            --btn-hover-border: rgba(109,138,255,0.5);
+            --accent: #6d8aff;
+            --status-color: #fff;
+        }
+
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body {
+            background: radial-gradient(ellipse at 50% 30%, var(--bg-start) 0%, var(--bg-end) 100%);
+            font-family: var(--font);
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+            color: var(--text-color);
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        canvas {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            z-index: 0;
+            display: block;
+        }
+
+        /* Chat area – completely transparent, no box */
+        #chat-container {
+            position: fixed;
+            top: 28px;
+            left: 28px;
+            bottom: 110px;
+            width: 420px;
+            max-width: calc(100vw - 56px);
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            overflow-y: auto;
+            padding: 0 4px;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(128,128,128,0.2) transparent;
+            background: none;
+            pointer-events: auto;
+        }
+
+        .bubble {
+            max-width: 88%;
+            padding: 12px 16px;
+            border-radius: 16px;
+            font-size: 13.5px;
+            line-height: 1.55;
+            word-wrap: break-word;
+            animation: fadeSlide 0.25s ease-out;
+            letter-spacing: 0.01em;
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
+        }
+
+        .bubble.user {
+            align-self: flex-end;
+            background: var(--bubble-user-bg);
+            color: var(--bubble-user-text);
+            border: 1px solid var(--bubble-user-border);
+            border-bottom-right-radius: 4px;
+        }
+
+        .bubble.ai {
+            align-self: flex-start;
+            background: var(--bubble-ai-bg);
+            color: var(--bubble-ai-text);
+            border: 1px solid var(--bubble-ai-border);
+            border-bottom-left-radius: 4px;
+        }
+
+        @keyframes fadeSlide {
+            from { opacity: 0; transform: translateY(10px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Status emoji – top right, no box */
+        #status-line {
+            position: fixed;
+            top: 28px;
+            right: 28px;
+            z-index: 20;
+            font-size: 26px;
+            line-height: 1;
+            pointer-events: none;
+            color: var(--status-color);
+        }
+
+        /* Input bar – frosted glass pill, less blur */
+        #input-bar {
+            position: fixed;
+            bottom: 28px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 20;
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            background: var(--input-bar-bg);
+            backdrop-filter: var(--blur);
+            -webkit-backdrop-filter: var(--blur);
+            border: 1px solid var(--input-bar-border);
+            border-radius: 50px;
+            padding: 6px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+        }
+
+        #input-bar input {
+            background: transparent;
+            border: none;
+            color: var(--input-bar-text);
+            padding: 10px 4px;
+            font-family: inherit;
+            font-size: 14px;
+            width: 280px;
+            outline: none;
+            caret-color: var(--accent);
+        }
+
+        #input-bar input::placeholder {
+            color: var(--input-placeholder);
+        }
+
+        #input-bar button {
+            background: var(--btn-bg);
+            border: 1px solid var(--btn-border);
+            color: var(--btn-color);
+            cursor: pointer;
+            transition: all 0.25s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            padding: 0;
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+        }
+
+        #input-bar button:hover {
+            background: var(--btn-hover-bg);
+            border-color: var(--btn-hover-border);
+            color: var(--accent);
+            box-shadow: 0 0 20px rgba(109,138,255,0.25);
+            transform: scale(1.06);
+        }
+
+        #input-bar button:active {
+            transform: scale(0.95);
+        }
+
+        #input-bar button svg {
+            width: 18px;
+            height: 18px;
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="c"></canvas>
+
+    <!-- Top-right status emoji -->
+    <div id="status-line">⏳</div>
+
+    <!-- Chat area -->
+    <div id="chat-container"></div>
+
+    <!-- Input bar -->
+    <div id="input-bar">
+        <button id="micBtn">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 19v3"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><rect x="9" y="2" width="6" height="13" rx="3"/>
+            </svg>
+        </button>
+        <input id="inp" type="text" placeholder="Message Pownin…" autofocus>
+        <button id="sendBtn">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z"/><path d="m21.854 2.147-10.94 10.939"/>
+            </svg>
+        </button>
+    </div>
+
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.157.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.157.0/examples/jsm/"
+            }
+        }
+    </script>
+
+    <script type="module">
+        // ═══════════════ CHAT ═══════════════
+        const chatContainer = document.getElementById('chat-container');
+        const statusLine = document.getElementById('status-line');
+        const inpEl = document.getElementById('inp');
+
+        function setStatus(txt) { statusLine.textContent = txt; }
+        function addBubble(text, type) {
+            const b = document.createElement('div');
+            b.className = 'bubble ' + type;
+            b.textContent = text;
+            chatContainer.appendChild(b);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+            while (chatContainer.children.length > 20) chatContainer.removeChild(chatContainer.firstChild);
+        }
+
+        const aud = new Audio();
+        aud.addEventListener('ended', () => send({type:'audio_done'}));
+        aud.addEventListener('error', () => send({type:'audio_done'}));
+
+        const wsUrl = `ws://${location.hostname}:8765`;
+        let ws;
+        setStatus('⏳');
+
+        function connect() {
+            ws = new WebSocket(wsUrl);
+            ws.onopen = () => {
+                setStatus('✅');
+                addBubble('Pownin, reporting for duty.', 'ai');
+            };
+            ws.onmessage = e => {
+                try {
+                    const m = JSON.parse(e.data);
+                    if (m.type === 'status') setStatus(m.value);
+                    else if (m.type === 'user_text') addBubble(m.text, 'user');
+                    else if (m.type === 'assistant_text') addBubble(m.text, 'ai');
+                    else if (m.type === 'audio') {
+                        aud.src = m.url + '?t=' + Date.now();
+                        aud.play().catch(() => {});
+                    }
+                } catch(ex) {}
+            };
+            ws.onclose = () => { setStatus('❌'); setTimeout(connect, 3000); };
+            ws.onerror = () => setStatus('❌');
+        }
+
+        function send(obj) {
+            if (ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(obj));
+            else setStatus('❌');
+        }
+
+        document.getElementById('micBtn').onclick = () => send({type:'start_listening'});
+        document.getElementById('sendBtn').onclick = () => {
+            const t = inpEl.value.trim();
+            if (t) { send({type:'text_input', text:t}); inpEl.value = ''; }
+        };
+        inpEl.addEventListener('keydown', e => {
+            if (e.key === 'Enter') {
+                const t = inpEl.value.trim();
+                if (t) { send({type:'text_input', text:t}); inpEl.value = ''; }
+            }
+        });
+
+        connect();
+
+        // ═══════════════ THREE.JS (unchanged) ═══════════════
+        import * as THREE from 'three';
+        import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+
+        const ren = new THREE.WebGLRenderer({canvas:document.getElementById('c'), antialias:true, alpha:true});
+        ren.setPixelRatio(devicePixelRatio);
+        ren.setSize(innerWidth, innerHeight);
+        ren.shadowMap.enabled = true;
+
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x020617);
+        const cam = new THREE.PerspectiveCamera(45, innerWidth/innerHeight, 0.1, 100);
+        cam.position.set(0, 1.4, 4);
+        let lookTarget = new THREE.Vector3(0, 0.8, 0);
+        cam.lookAt(lookTarget);
+
+        scene.add(new THREE.AmbientLight(0x404066));
+        const d = new THREE.DirectionalLight(0xffffff, 1.5);
+        d.position.set(2, 3, 2); d.castShadow = true;
+        scene.add(d);
+        scene.add(new THREE.DirectionalLight(0x88aaff, 0.8).translateX(-2));
+        scene.add(new THREE.HemisphereLight(0x443366, 0x111122, 0.6));
+
+        const modelUrl = '/pownin.glb?nocache=' + Date.now();
+        const loader = new GLTFLoader();
+        loader.load(
+            modelUrl,
+            (gltf) => {
+                const model = gltf.scene;
+                scene.add(model);
+
+                const box = new THREE.Box3().setFromObject(model);
+                const size = box.getSize(new THREE.Vector3());
+                const center = box.getCenter(new THREE.Vector3());
+                lookTarget.copy(center);
+                const maxDim = Math.max(size.x, size.y, size.z);
+                const fov = cam.fov * Math.PI / 180;
+                let dist = maxDim / (2 * Math.tan(fov / 2));
+                dist *= 1.6;
+                cam.position.set(center.x, center.y + size.y * 0.3, center.z + dist);
+                cam.lookAt(lookTarget);
+
+                let mouth = null;
+                model.traverse((child) => {
+                    if (child.isMesh && child.name.toLowerCase().includes('mouth')) mouth = child;
+                });
+                if (!mouth) {
+                    model.traverse((child) => {
+                        if (child.isMesh && (child.name.toLowerCase().includes('jaw') || child.name.toLowerCase().includes('head'))) mouth = child;
+                    });
+                }
+
+                let speaking = false;
+                aud.addEventListener('play', () => speaking = true);
+                aud.addEventListener('pause', () => speaking = false);
+
+                function animate() {
+                    requestAnimationFrame(animate);
+                    if (mouth && speaking) {
+                        if (mouth.morphTargetInfluences && mouth.morphTargetInfluences.length > 0) {
+                            mouth.morphTargetInfluences[0] = 0.5 + 0.5 * Math.sin(Date.now() * 0.03);
+                        } else {
+                            mouth.scale.y = 1 + 0.8 * Math.sin(Date.now() * 0.025);
+                        }
+                    } else if (mouth) {
+                        if (mouth.morphTargetInfluences) mouth.morphTargetInfluences[0] = 0;
+                        else mouth.scale.y = 1;
+                    }
+                    ren.render(scene, cam);
+                }
+                animate();
+            },
+            undefined,
+            (error) => {
+                console.error('Failed to load model:', error);
+                addBubble('⚠️ Could not load 3D model.', 'ai');
+            }
+        );
+
+        // ── Scroll zoom: only when NOT hovering over chat or input bar ──
+        window.addEventListener('wheel', (e) => {
+            // If the mouse is over the chat container or the input bar, do nothing (let native scroll work)
+            const target = e.target;
+            if (chatContainer.contains(target) || document.getElementById('input-bar').contains(target)) {
+                return; // allow default scrolling
+            }
+
+            // Otherwise, zoom the camera
+            e.preventDefault();
+            const direction = new THREE.Vector3().subVectors(cam.position, lookTarget).normalize();
+            const currentDist = cam.position.distanceTo(lookTarget);
+            const newDist = Math.max(0.5, Math.min(15, currentDist + e.deltaY * 0.01));
+            cam.position.copy(lookTarget.clone().add(direction.multiplyScalar(newDist)));
+            cam.lookAt(lookTarget);
+        }, { passive: false });
+
+        window.addEventListener('resize', () => {
+            cam.aspect = innerWidth / innerHeight;
+            cam.updateProjectionMatrix();
+            ren.setSize(innerWidth, innerHeight);
+        });
+    </script>
+</body>
+</html>

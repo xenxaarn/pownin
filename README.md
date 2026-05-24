@@ -5,10 +5,11 @@
 A locally hosted ninja penguin on your desktop.  
 That listens to your voice or typed messages, processes them through a local language model,  
 and responds with voice and lip-synced animations — all on your own machine.
-
+ 
  - the project only runs on firefox,chrome (no other browser for now)
  - tested and on all linux distros (working)
  - tested but not working for windows (ill fix it later)
+ - only works if you are using lmstudio ollama is currently not working
 
 ## Features
 
